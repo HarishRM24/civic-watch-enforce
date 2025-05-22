@@ -16,6 +16,13 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
+      <footer className="bg-police-800 text-white p-4 text-center text-sm">
+        <div className="container mx-auto">
+          <p>© {new Date().getFullYear()} Police Management System. All rights reserved.</p>
+          <p className="mt-1">Developed by: Sarvesh Chandran (20MIS0439)</p>
+          <p className="mt-1">Contact: sarveshchandran.j2020@vitstudent.ac.in</p>
+        </div>
+      </footer>
     </div>
   );
 };
