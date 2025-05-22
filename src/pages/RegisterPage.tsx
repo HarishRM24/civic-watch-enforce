@@ -52,13 +52,8 @@ const RegisterPage = () => {
           description: "Your account has been created. You can now log in.",
         });
         navigate("/login");
-      } else {
-        toast({
-          title: "Registration failed",
-          description: "This email is already registered",
-          variant: "destructive",
-        });
       }
+      // Error handling is done within the register function
     } catch (error) {
       toast({
         title: "Error",

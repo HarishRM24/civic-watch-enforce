@@ -39,13 +39,8 @@ const LoginPage = () => {
           description: "You have successfully logged in",
         });
         navigate("/");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid email or password",
-          variant: "destructive",
-        });
       }
+      // Error handling is done within the login function
     } catch (error) {
       toast({
         title: "Error",
