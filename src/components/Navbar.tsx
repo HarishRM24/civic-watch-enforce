@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 
 interface NavbarProps {
-  setIsSidebarOpen: (value: boolean) => void;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
