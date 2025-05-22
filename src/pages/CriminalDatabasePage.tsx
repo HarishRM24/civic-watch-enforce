@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Search, Calendar, AlertTriangle, FileText, 
-  User, Filter, Download, Handcuffs 
+  User, Filter, Download, Shield 
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,7 @@ const CriminalDatabasePage = () => {
                       <TableRow key={criminal.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center">
-                            <Handcuffs className="h-5 w-5 text-red-500 mr-2" />
+                            <Shield className="h-5 w-5 text-red-500 mr-2" />
                             {criminal.name}
                           </div>
                         </TableCell>

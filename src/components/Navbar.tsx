@@ -19,7 +19,7 @@ const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => setIsSidebarOpen(prev => !prev)}
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
             className="text-white hover:bg-police-700"
           >
             <Menu className="h-6 w-6" />
