@@ -10,6 +10,7 @@ interface UserProfile {
   role: string;
   display_name: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
@@ -84,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -168,7 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('Registration successful for:', email);
         toast({
           title: "Registration successful",
-          description: "You can now log in with your credentials",
+          description: "Please check your email to confirm your account",
         });
         return true;
       }

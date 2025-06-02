@@ -1,33 +1,78 @@
 
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { 
-  Building2, Users, AlertTriangle, 
-  ClipboardCheck, ArrowRight, Search 
-} from "lucide-react";
+import { Shield, Users, AlertTriangle, Building2, UserRound, ClipboardCheck } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 
 const HomePage = () => {
-  const { user, userRole, userProfile } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { user, userRole } = useAuth();
 
-  const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'User';
+  const features = [
+    {
+      title: "Police Stations",
+      description: "Find and get information about police stations in your area",
+      icon: Building2,
+      href: "/police-stations",
+      color: "bg-police-50 border-police-200"
+    },
+    {
+      title: "Civilian Database",
+      description: "Access civilian records and information (Police Only)",
+      icon: Users,
+      href: "/civilian-database",
+      color: "bg-blue-50 border-blue-200",
+      restricted: "police"
+    },
+    {
+      title: "Criminal Database",
+      description: "View criminal records and case information (Police Only)",
+      icon: AlertTriangle,
+      href: "/criminal-database",
+      color: "bg-red-50 border-red-200",
+      restricted: "police"
+    },
+    {
+      title: "My Profile",
+      description: "View and update your personal information",
+      icon: UserRound,
+      href: "/civilian-profile",
+      color: "bg-green-50 border-green-200",
+      restricted: "civilian"
+    },
+    {
+      title: "File Complaint",
+      description: "Submit complaints about police officers or stations",
+      icon: ClipboardCheck,
+      href: "/complaint/new",
+      color: "bg-amber-50 border-amber-200",
+      restricted: "civilian"
+    }
+  ];
+
+  const filteredFeatures = features.filter(feature => 
+    !feature.restricted || feature.restricted === userRole
+  );
 
   return (
-    <div className="container mx-auto">
-      <section className="mb-12 text-center">
-        <h1 className="police-title mb-4">Police Management System</h1>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          A comprehensive system for managing police stations, civilian records, and criminal databases.
+    <div className="container mx-auto px-4 py-8">
+      {/* Hero Section */}
+      <div className="text-center mb-12">
+        <div className="flex justify-center mb-6">
+          <Shield className="h-24 w-24 text-police-600" />
+        </div>
+        <h1 className="text-4xl font-bold text-police-800 mb-4">
+          Police Management System
+        </h1>
+        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          A comprehensive platform for managing police operations, civilian records, 
+          and community interactions with enhanced security and efficiency.
         </p>
         
         {!user && (
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex gap-4 justify-center">
             <Link to="/login">
-              <Button size="lg" className="bg-police-700 hover:bg-police-800">
+              <Button size="lg" className="bg-police-600 hover:bg-police-700">
                 Login
               </Button>
             </Link>
@@ -38,150 +83,60 @@ const HomePage = () => {
             </Link>
           </div>
         )}
-      </section>
+      </div>
 
-      {user && (
-        <section className="mb-12">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-police-700 mb-4">Welcome, {displayName}</h2>
-            <p className="text-gray-600 mb-6">
-              {userRole === 'police' 
-                ? "Access police resources, view civilian and criminal databases, and manage your station."
-                : "Find information about police stations, file complaints, and manage your profile."}
-            </p>
-            
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search for stations, people, or resources..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="mb-12">
-        <h2 className="section-title">Quick Access</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
+      {/* Features Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
+        {filteredFeatures.map((feature) => (
+          <Card key={feature.title} className={`${feature.color} transition-all hover:shadow-md`}>
             <CardHeader>
-              <Building2 className="h-8 w-8 text-police-600 mb-2" />
-              <CardTitle>Police Stations</CardTitle>
-              <CardDescription>
-                View and search all police stations across the country
+              <div className="flex items-center gap-3">
+                <feature.icon className="h-8 w-8 text-police-600" />
+                <CardTitle className="text-xl">{feature.title}</CardTitle>
+              </div>
+              <CardDescription className="text-gray-600">
+                {feature.description}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">
-                Access contact information, location details, and officer information for all registered police stations.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Link to="/police-stations" className="w-full">
-                <Button className="w-full" variant="outline">
-                  View Stations
-                  <ArrowRight className="ml-2 h-4 w-4" />
+              <Link to={feature.href}>
+                <Button variant="outline" className="w-full">
+                  Access Feature
                 </Button>
               </Link>
-            </CardFooter>
+            </CardContent>
           </Card>
+        ))}
+      </div>
 
-          {userRole === 'police' && (
-            <>
-              <Card>
-                <CardHeader>
-                  <Users className="h-8 w-8 text-police-600 mb-2" />
-                  <CardTitle>Civilian Database</CardTitle>
-                  <CardDescription>
-                    Access and manage civilian records
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">
-                    View civilian information, update records, and check status information.
-                  </p>
-                </CardContent>
-                <CardFooter>
-                  <Link to="/civilian-database" className="w-full">
-                    <Button className="w-full" variant="outline">
-                      Access Database
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <AlertTriangle className="h-8 w-8 text-police-600 mb-2" />
-                  <CardTitle>Criminal Database</CardTitle>
-                  <CardDescription>
-                    Review criminal records and cases
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">
-                    Access criminal profiles, case histories, and related information.
-                  </p>
-                </CardContent>
-                <CardFooter>
-                  <Link to="/criminal-database" className="w-full">
-                    <Button className="w-full" variant="outline">
-                      View Records
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            </>
-          )}
-
-          {userRole === 'civilian' && (
-            <>
-              <Card>
-                <CardHeader>
-                  <ClipboardCheck className="h-8 w-8 text-police-600 mb-2" />
-                  <CardTitle>File Complaint</CardTitle>
-                  <CardDescription>
-                    Submit complaints about police officers
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">
-                    File a formal complaint about police misconduct or service issues.
-                  </p>
-                </CardContent>
-                <CardFooter>
-                  <Link to="/complaint/new" className="w-full">
-                    <Button className="w-full" variant="outline">
-                      File Complaint
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            </>
-          )}
-        </div>
-      </section>
-
-      <section className="mb-12">
-        <div className="bg-police-50 p-6 rounded-lg border border-police-100">
-          <h2 className="text-xl font-semibold text-police-800 mb-4">About the Police Management System</h2>
-          <p className="text-gray-700 mb-4">
-            Our Police Management System provides a centralized platform for law enforcement agencies 
-            and civilians to access essential services and information.
-          </p>
-          <p className="text-gray-700">
-            The system enables efficient management of police stations, streamlines civilian interactions 
-            with law enforcement, and ensures transparency in police operations.
+      {/* Welcome Message for Logged-in Users */}
+      {user && userRole && (
+        <div className="bg-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-2xl font-semibold text-police-800 mb-2">
+            Welcome back!
+          </h2>
+          <p className="text-gray-600">
+            You are logged in as a <span className="font-semibold capitalize">{userRole}</span>.
+            Use the navigation menu or the cards above to access your features.
           </p>
         </div>
-      </section>
+      )}
+
+      {/* Statistics Section */}
+      <div className="grid gap-4 md:grid-cols-3 mt-12">
+        <div className="bg-police-100 p-6 rounded-lg text-center">
+          <h3 className="text-2xl font-bold text-police-800">24/7</h3>
+          <p className="text-police-600">Emergency Response</p>
+        </div>
+        <div className="bg-police-100 p-6 rounded-lg text-center">
+          <h3 className="text-2xl font-bold text-police-800">100+</h3>
+          <p className="text-police-600">Police Stations</p>
+        </div>
+        <div className="bg-police-100 p-6 rounded-lg text-center">
+          <h3 className="text-2xl font-bold text-police-800">Secure</h3>
+          <p className="text-police-600">Data Management</p>
+        </div>
+      </div>
     </div>
   );
 };

@@ -9,7 +9,209 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      civilians: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          id: string
+          is_criminal: boolean | null
+          job: string | null
+          name: string
+          phone: string | null
+          pincode: string | null
+          salary: string | null
+          state: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_criminal?: boolean | null
+          job?: string | null
+          name: string
+          phone?: string | null
+          pincode?: string | null
+          salary?: string | null
+          state?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_criminal?: boolean | null
+          job?: string | null
+          name?: string
+          phone?: string | null
+          pincode?: string | null
+          salary?: string | null
+          state?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      complaints: {
+        Row: {
+          complainant_id: string | null
+          created_at: string
+          description: string
+          id: string
+          officer_id: string | null
+          status: string | null
+          subject: string
+        }
+        Insert: {
+          complainant_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          officer_id?: string | null
+          status?: string | null
+          subject: string
+        }
+        Update: {
+          complainant_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          officer_id?: string | null
+          status?: string | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_complainant_id_fkey"
+            columns: ["complainant_id"]
+            isOneToOne: false
+            referencedRelation: "civilians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "police_officers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      police_officers: {
+        Row: {
+          badge_number: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          rank: string
+          station_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          badge_number?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          rank: string
+          station_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          badge_number?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          rank?: string
+          station_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "police_officers_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "police_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      police_stations: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          email: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          phone: string | null
+          state: string
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          phone?: string | null
+          state: string
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          phone?: string | null
+          state?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
