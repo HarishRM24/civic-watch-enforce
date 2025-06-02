@@ -16,43 +16,63 @@ export interface PoliceStation {
 }
 
 export const getPoliceStations = async (): Promise<PoliceStation[]> => {
-  const { data, error } = await supabase
-    .from('police_stations')
-    .select('*');
+  try {
+    const { data, error } = await supabase
+      .from('police_stations')
+      .select('*')
+      .order('name');
 
-  if (error) {
-    console.error('Error fetching police stations:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching police stations:', error);
+      throw error;
+    }
+
+    console.log('Fetched police stations:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('Service error fetching police stations:', error);
+    return [];
   }
-
-  return data || [];
 };
 
 export const getPoliceStationById = async (id: string): Promise<PoliceStation | null> => {
-  const { data, error } = await supabase
-    .from('police_stations')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('police_stations')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
 
-  if (error) {
-    console.error(`Error fetching police station with ID ${id}:`, error);
-    throw error;
+    if (error) {
+      console.error(`Error fetching police station with ID ${id}:`, error);
+      throw error;
+    }
+
+    console.log('Fetched police station:', data?.name || 'Not found');
+    return data;
+  } catch (error) {
+    console.error('Service error fetching police station:', error);
+    return null;
   }
-
-  return data;
 };
 
 export const searchPoliceStations = async (query: string): Promise<PoliceStation[]> => {
-  const { data, error } = await supabase
-    .from('police_stations')
-    .select('*')
-    .or(`name.ilike.%${query}%, city.ilike.%${query}%, state.ilike.%${query}%`);
+  try {
+    const { data, error } = await supabase
+      .from('police_stations')
+      .select('*')
+      .or(`name.ilike.%${query}%, city.ilike.%${query}%, state.ilike.%${query}%`)
+      .order('name');
 
-  if (error) {
-    console.error('Error searching police stations:', error);
-    throw error;
+    if (error) {
+      console.error('Error searching police stations:', error);
+      throw error;
+    }
+
+    console.log('Search results:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('Service error searching police stations:', error);
+    return [];
   }
-
-  return data || [];
 };

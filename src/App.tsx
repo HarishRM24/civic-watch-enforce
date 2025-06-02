@@ -17,9 +17,10 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import NotFound from "./pages/NotFound";
 
-// Layout
+// Layout and Auth
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
 
@@ -28,38 +29,40 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/" element={<Layout />}>
-            <Route index element={<HomePage />} />
-            <Route path="police-stations" element={<PoliceStationsPage />} />
-            <Route path="police-stations/:id" element={<PoliceStationDetailPage />} />
-            <Route path="civilian-database" element={
-              <ProtectedRoute requiredRole="police">
-                <CivilianDatabasePage />
-              </ProtectedRoute>
-            } />
-            <Route path="criminal-database" element={
-              <ProtectedRoute requiredRole="police">
-                <CriminalDatabasePage />
-              </ProtectedRoute>
-            } />
-            <Route path="civilian-profile" element={
-              <ProtectedRoute requiredRole="civilian">
-                <CivilianProfilePage />
-              </ProtectedRoute>
-            } />
-            <Route path="complaint/:officerId" element={
-              <ProtectedRoute requiredRole="civilian">
-                <ComplaintPage />
-              </ProtectedRoute>
-            } />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/" element={<Layout />}>
+              <Route index element={<HomePage />} />
+              <Route path="police-stations" element={<PoliceStationsPage />} />
+              <Route path="police-stations/:id" element={<PoliceStationDetailPage />} />
+              <Route path="civilian-database" element={
+                <ProtectedRoute requiredRole="police">
+                  <CivilianDatabasePage />
+                </ProtectedRoute>
+              } />
+              <Route path="criminal-database" element={
+                <ProtectedRoute requiredRole="police">
+                  <CriminalDatabasePage />
+                </ProtectedRoute>
+              } />
+              <Route path="civilian-profile" element={
+                <ProtectedRoute requiredRole="civilian">
+                  <CivilianProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="complaint/:officerId" element={
+                <ProtectedRoute requiredRole="civilian">
+                  <ComplaintPage />
+                </ProtectedRoute>
+              } />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

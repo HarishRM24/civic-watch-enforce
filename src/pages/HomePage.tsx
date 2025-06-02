@@ -11,8 +11,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from "@/hooks/useAuth";
 
 const HomePage = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, userProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'User';
 
   return (
     <div className="container mx-auto">
@@ -41,7 +43,7 @@ const HomePage = () => {
       {user && (
         <section className="mb-12">
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-police-700 mb-4">Welcome, {user.displayName || user.email}</h2>
+            <h2 className="text-2xl font-bold text-police-700 mb-4">Welcome, {displayName}</h2>
             <p className="text-gray-600 mb-6">
               {userRole === 'police' 
                 ? "Access police resources, view civilian and criminal databases, and manage your station."

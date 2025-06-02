@@ -10,7 +10,9 @@ interface NavbarProps {
 }
 
 const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
-  const { user, logout } = useAuth();
+  const { user, userProfile, logout } = useAuth();
+
+  const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'User';
 
   return (
     <header className="bg-police-800 text-white shadow-md">
@@ -34,11 +36,11 @@ const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
           {user ? (
             <div className="flex items-center gap-4">
               <span className="hidden md:inline-block">
-                Hi, {user.displayName || user.email}!
+                Hi, {displayName}!
               </span>
               <Avatar>
                 <AvatarFallback className="bg-police-500">
-                  {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+                  {displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <Button 

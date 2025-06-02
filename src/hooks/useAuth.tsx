@@ -4,9 +4,18 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+interface UserProfile {
+  id: string;
+  email: string;
+  role: string;
+  display_name: string | null;
+  created_at: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null;
   userRole: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
@@ -19,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,15 +36,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log('Auth state change:', event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Fetch user role if logged in
+        // Fetch user profile if logged in
         if (currentSession?.user) {
           setTimeout(() => {
-            fetchUserRole(currentSession.user.id);
+            fetchUserProfile(currentSession.user.id);
           }, 0);
         } else {
+          setUserProfile(null);
           setUserRole(null);
         }
       }
@@ -44,11 +56,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeAuth = async () => {
       try {
         const { data: { session: existingSession } } = await supabase.auth.getSession();
+        console.log('Existing session:', existingSession?.user?.email);
         setSession(existingSession);
         setUser(existingSession?.user ?? null);
         
         if (existingSession?.user) {
-          await fetchUserRole(existingSession.user.id);
+          await fetchUserProfile(existingSession.user.id);
         }
         
         setIsLoading(false);
@@ -65,33 +78,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('*')
         .eq('id', userId)
         .single();
 
       if (error) {
-        console.error('Error fetching user role:', error);
+        console.error('Error fetching user profile:', error);
         return;
       }
 
-      setUserRole(data?.role || null);
+      if (data) {
+        setUserProfile(data);
+        setUserRole(data.role);
+        console.log('User profile loaded:', data);
+      }
     } catch (error) {
-      console.error('Unexpected error fetching user role:', error);
+      console.error('Unexpected error fetching user profile:', error);
     }
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log('Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Login error:', error);
         toast({
           title: "Login failed",
           description: error.message,
@@ -100,7 +119,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
-      return !!data.user;
+      if (data.user) {
+        console.log('Login successful for:', email);
+        toast({
+          title: "Success",
+          description: "You have successfully logged in",
+        });
+        return true;
+      }
+
+      return false;
     } catch (error) {
       console.error('Unexpected error during login:', error);
       toast({
@@ -114,6 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (email: string, password: string, role: string, displayName?: string): Promise<boolean> => {
     try {
+      console.log('Attempting registration for:', email, 'with role:', role);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -126,6 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
+        console.error('Registration error:', error);
         toast({
           title: "Registration failed",
           description: error.message,
@@ -134,12 +164,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
-      toast({
-        title: "Registration successful",
-        description: "You can now log in with your credentials",
-      });
-      
-      return !!data.user;
+      if (data.user) {
+        console.log('Registration successful for:', email);
+        toast({
+          title: "Registration successful",
+          description: "You can now log in with your credentials",
+        });
+        return true;
+      }
+
+      return false;
     } catch (error) {
       console.error('Unexpected error during registration:', error);
       toast({
@@ -154,6 +188,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
+      setUserProfile(null);
+      setUserRole(null);
       toast({
         title: "Logged out",
         description: "You have been successfully logged out",
@@ -172,6 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{ 
       user, 
       session,
+      userProfile,
       userRole,
       isLoading, 
       login, 
