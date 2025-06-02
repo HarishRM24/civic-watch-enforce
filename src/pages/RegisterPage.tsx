@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,15 @@ const RegisterPage = () => {
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState("civilian");
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +47,15 @@ const RegisterPage = () => {
       });
       return;
     }
+
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     
@@ -47,19 +63,14 @@ const RegisterPage = () => {
       const success = await register(email, password, role, displayName);
       
       if (success) {
+        // Don't automatically redirect, let user know they need to confirm email
         toast({
           title: "Registration successful",
-          description: "Your account has been created. You can now log in.",
+          description: "Please check your email for a confirmation link before logging in.",
         });
-        navigate("/login");
       }
-      // Error handling is done within the register function
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred during registration",
-        variant: "destructive",
-      });
+      console.error('Registration form error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -115,6 +126,7 @@ const RegisterPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
               </div>
               
@@ -175,6 +187,18 @@ const RegisterPage = () => {
             </p>
           </CardFooter>
         </Card>
+
+        <div className="mt-6 text-center">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-amber-800 mb-2">
+              Important Setup Note
+            </p>
+            <p className="text-xs text-amber-600">
+              For testing purposes, you may want to disable "Confirm email" in your Supabase 
+              Authentication settings to skip email verification.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -112,11 +112,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Login error:', error);
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message.includes('Email not confirmed')) {
+          toast({
+            title: "Email not confirmed",
+            description: "Please check your email and click the confirmation link before logging in.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return false;
       }
 
@@ -144,10 +152,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (email: string, password: string, role: string, displayName?: string): Promise<boolean> => {
     try {
       console.log('Attempting registration for:', email, 'with role:', role);
+      
+      // Get current origin for redirect URL
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             role,
             display_name: displayName,
@@ -167,10 +180,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (data.user) {
         console.log('Registration successful for:', email);
-        toast({
-          title: "Registration successful",
-          description: "Please check your email to confirm your account",
-        });
+        
+        if (data.user.email_confirmed_at) {
+          toast({
+            title: "Registration successful",
+            description: "Your account has been created and you are now logged in.",
+          });
+        } else {
+          toast({
+            title: "Registration successful",
+            description: "Please check your email and click the confirmation link to activate your account.",
+          });
+        }
         return true;
       }
 
