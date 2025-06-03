@@ -12,17 +12,31 @@ interface NavbarProps {
 const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
   const { user, userProfile, logout } = useAuth();
 
-  // Improved display name logic with better fallback
+  // Improved display name logic with proper fallback
   const getDisplayName = () => {
     // First priority: display_name from profile
     if (userProfile?.display_name && userProfile.display_name.trim() !== '') {
       return userProfile.display_name;
     }
     
-    // Second priority: email username part
+    // Second priority: user metadata display_name or full_name
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name;
+    }
+    
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    
+    // Third priority: email from profile (should match auth email)
+    if (userProfile?.email) {
+      const emailUsername = userProfile.email.split('@')[0];
+      return emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
+    }
+    
+    // Fourth priority: email from auth user
     if (user?.email) {
       const emailUsername = user.email.split('@')[0];
-      // Make it more readable by capitalizing first letter
       return emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
     }
     
@@ -31,12 +45,13 @@ const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
   };
 
   const displayName = getDisplayName();
+  const displayEmail = userProfile?.email || user?.email || '';
 
   const handleMenuToggle = () => {
-    console.log('Menu button clicked, current sidebar state will toggle'); // Debug log
+    console.log('Menu button clicked, current sidebar state will toggle');
     setIsSidebarOpen((prev) => {
       const newState = !prev;
-      console.log('Sidebar state changing from', prev, 'to', newState); // Debug log
+      console.log('Sidebar state changing from', prev, 'to', newState);
       return newState;
     });
   };
@@ -64,9 +79,12 @@ const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
         <div className="flex items-center gap-4">
           {user ? (
             <div className="flex items-center gap-4">
-              <span className="hidden md:inline-block text-sm">
-                Welcome, {displayName}!
-              </span>
+              <div className="hidden md:block text-sm">
+                <div>Welcome, {displayName}!</div>
+                {displayEmail && (
+                  <div className="text-xs text-police-200">{displayEmail}</div>
+                )}
+              </div>
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-police-500 text-white text-sm">
                   {displayName.charAt(0).toUpperCase()}

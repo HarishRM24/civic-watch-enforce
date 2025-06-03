@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
@@ -35,16 +36,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log('Auth state change:', event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         // Fetch user profile if logged in
         if (currentSession?.user) {
+          // Use setTimeout to avoid potential RLS issues
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id);
-          }, 0);
+          }, 100);
         } else {
           setUserProfile(null);
           setUserRole(null);
@@ -85,10 +87,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error fetching user profile:', error);
+        // If profile doesn't exist, create one with current user data
+        if (error.code === 'PGRST116') {
+          await createUserProfile(userId);
+        }
         return;
       }
 
@@ -96,11 +102,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('User profile loaded:', data);
         setUserProfile(data);
         setUserRole(data.role);
-      } else {
-        console.log('No profile found for user, this might be a new user');
       }
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
+    }
+  };
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      const currentUser = await supabase.auth.getUser();
+      if (!currentUser.data.user) return;
+
+      const email = currentUser.data.user.email || '';
+      const displayName = currentUser.data.user.user_metadata?.display_name || 
+                         currentUser.data.user.user_metadata?.full_name ||
+                         email.split('@')[0];
+
+      console.log('Creating profile for user:', userId, 'with email:', email, 'and display name:', displayName);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          email: email,
+          role: 'civilian',
+          display_name: displayName
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+        return;
+      }
+
+      if (data) {
+        console.log('User profile created:', data);
+        setUserProfile(data);
+        setUserRole(data.role);
+      }
+    } catch (error) {
+      console.error('Unexpected error creating user profile:', error);
     }
   };
 
@@ -166,6 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           data: {
             role,
             display_name: displayName || email.split('@')[0],
+            full_name: displayName || email.split('@')[0],
           },
         },
       });
