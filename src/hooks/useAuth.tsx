@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -93,9 +93,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
+        console.log('User profile loaded:', data);
         setUserProfile(data);
         setUserRole(data.role);
-        console.log('User profile loaded:', data);
+      } else {
+        console.log('No profile found for user, this might be a new user');
       }
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
@@ -151,7 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (email: string, password: string, role: string, displayName?: string): Promise<boolean> => {
     try {
-      console.log('Attempting registration for:', email, 'with role:', role);
+      console.log('Attempting registration for:', email, 'with role:', role, 'display name:', displayName);
       
       // Get current origin for redirect URL
       const redirectUrl = `${window.location.origin}/`;
@@ -163,7 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           emailRedirectTo: redirectUrl,
           data: {
             role,
-            display_name: displayName,
+            display_name: displayName || email.split('@')[0],
           },
         },
       });
