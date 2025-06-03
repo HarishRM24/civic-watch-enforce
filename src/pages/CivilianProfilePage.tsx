@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, Mail, Phone, Home, Briefcase, 
@@ -12,48 +12,43 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { getCivilianById, updateCivilianProfile } from "@/services/dataService";
+import { getCivilianByUserId, updateCivilian } from "@/services/civilianService";
 
 const CivilianProfilePage = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   
-  // For demo purposes, we're using a hard-coded ID
-  const civilianId = "201";
-  
   const { data: civilian, isLoading, refetch } = useQuery({
-    queryKey: ["civilian", civilianId],
-    queryFn: () => getCivilianById(civilianId),
-    enabled: !!civilianId
+    queryKey: ["civilian", user?.id],
+    queryFn: () => getCivilianByUserId(user!.id),
+    enabled: !!user?.id
   });
   
   const [formData, setFormData] = useState({
     job: "",
     salary: "",
-    houseNo: "",
-    locality: "",
+    address: "",
     city: "",
     state: "",
-    pinCode: ""
+    pincode: ""
   });
   
   // Initialize form data when civilian data is loaded
-  useState(() => {
+  useEffect(() => {
     if (civilian) {
       setFormData({
         job: civilian.job || "",
         salary: civilian.salary || "",
-        houseNo: civilian.address.houseNo,
-        locality: civilian.address.locality,
-        city: civilian.address.city,
-        state: civilian.address.state,
-        pinCode: civilian.address.pinCode
+        address: civilian.address || "",
+        city: civilian.city || "",
+        state: civilian.state || "",
+        pincode: civilian.pincode || ""
       });
     }
-  });
+  }, [civilian]);
   
   const updateMutation = useMutation({
-    mutationFn: (data: any) => updateCivilianProfile(civilianId, data),
+    mutationFn: (data: any) => updateCivilian(civilian!.id, data),
     onSuccess: () => {
       toast({
         title: "Profile updated",
@@ -82,13 +77,10 @@ const CivilianProfilePage = () => {
     updateMutation.mutate({
       job: formData.job,
       salary: formData.salary,
-      address: {
-        houseNo: formData.houseNo,
-        locality: formData.locality,
-        city: formData.city,
-        state: formData.state,
-        pinCode: formData.pinCode
-      }
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      pincode: formData.pincode
     });
   };
 
@@ -101,13 +93,14 @@ const CivilianProfilePage = () => {
     );
   }
 
-  if (!civilian) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-red-500 mb-4">Civilian profile not found</p>
-      </div>
-    );
-  }
+  // Use actual user data with fallbacks
+  const displayName = userProfile?.display_name || user?.user_metadata?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayEmail = userProfile?.email || user?.email || '';
+  const phoneNumber = civilian?.phone || 'Not provided';
+  const address = civilian?.address || 'Not provided';
+  const city = civilian?.city || '';
+  const state = civilian?.state || '';
+  const pincode = civilian?.pincode || '';
 
   return (
     <div>
@@ -125,9 +118,9 @@ const CivilianProfilePage = () => {
                 <div className="w-24 h-24 rounded-full bg-police-100 flex items-center justify-center mx-auto mb-4">
                   <User className="h-12 w-12 text-police-600" />
                 </div>
-                <CardTitle>{civilian.name}</CardTitle>
+                <CardTitle>{displayName}</CardTitle>
                 <CardDescription>
-                  {civilian.isCriminal ? (
+                  {civilian?.is_criminal ? (
                     <span className="text-red-500 flex items-center justify-center mt-2">
                       <Shield className="h-4 w-4 mr-1" />
                       Criminal Record
@@ -146,7 +139,7 @@ const CivilianProfilePage = () => {
                     <Mail className="h-5 w-5 text-gray-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
-                      <p>{civilian.email}</p>
+                      <p>{displayEmail}</p>
                     </div>
                   </div>
                   
@@ -154,7 +147,7 @@ const CivilianProfilePage = () => {
                     <Phone className="h-5 w-5 text-gray-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500">Phone</p>
-                      <p>{civilian.phoneNumber}</p>
+                      <p>{phoneNumber}</p>
                     </div>
                   </div>
                   
@@ -163,14 +156,15 @@ const CivilianProfilePage = () => {
                     <div>
                       <p className="text-sm text-gray-500">Address</p>
                       <p>
-                        {civilian.address.houseNo}, {civilian.address.locality}, {civilian.address.city},
-                        <br />
-                        {civilian.address.state} - {civilian.address.pinCode}
+                        {address}
+                        {city && <><br />{city}</>}
+                        {state && <>, {state}</>}
+                        {pincode && <> - {pincode}</>}
                       </p>
                     </div>
                   </div>
                   
-                  {civilian.job && (
+                  {civilian?.job && (
                     <div className="flex items-center">
                       <Briefcase className="h-5 w-5 text-gray-400 mr-3" />
                       <div>
@@ -253,43 +247,36 @@ const CivilianProfilePage = () => {
                         <div className="space-y-2">
                           <Label>Address</Label>
                           
-                          <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-4">
                             <Input
-                              name="houseNo"
-                              value={formData.houseNo}
+                              name="address"
+                              value={formData.address}
                               onChange={handleInputChange}
-                              placeholder="House/Flat No."
+                              placeholder="Street Address"
                             />
                             
-                            <Input
-                              name="locality"
-                              value={formData.locality}
-                              onChange={handleInputChange}
-                              placeholder="Locality"
-                            />
-                          </div>
-                          
-                          <div className="grid gap-4 md:grid-cols-3">
-                            <Input
-                              name="city"
-                              value={formData.city}
-                              onChange={handleInputChange}
-                              placeholder="City"
-                            />
-                            
-                            <Input
-                              name="state"
-                              value={formData.state}
-                              onChange={handleInputChange}
-                              placeholder="State"
-                            />
-                            
-                            <Input
-                              name="pinCode"
-                              value={formData.pinCode}
-                              onChange={handleInputChange}
-                              placeholder="PIN Code"
-                            />
+                            <div className="grid gap-4 md:grid-cols-3">
+                              <Input
+                                name="city"
+                                value={formData.city}
+                                onChange={handleInputChange}
+                                placeholder="City"
+                              />
+                              
+                              <Input
+                                name="state"
+                                value={formData.state}
+                                onChange={handleInputChange}
+                                placeholder="State"
+                              />
+                              
+                              <Input
+                                name="pincode"
+                                value={formData.pincode}
+                                onChange={handleInputChange}
+                                placeholder="PIN Code"
+                              />
+                            </div>
                           </div>
                         </div>
                         
