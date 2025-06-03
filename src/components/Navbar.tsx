@@ -12,7 +12,26 @@ interface NavbarProps {
 const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
   const { user, userProfile, logout } = useAuth();
 
-  const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'User';
+  // Improved display name logic with better fallback
+  const getDisplayName = () => {
+    if (userProfile?.display_name) {
+      return userProfile.display_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
+  const displayName = getDisplayName();
+
+  const handleMenuToggle = () => {
+    console.log('Menu button clicked'); // Debug log
+    setIsSidebarOpen((prev) => {
+      console.log('Sidebar state changing from', prev, 'to', !prev); // Debug log
+      return !prev;
+    });
+  };
 
   return (
     <header className="bg-police-800 text-white shadow-md">
@@ -21,7 +40,7 @@ const Navbar = ({ setIsSidebarOpen }: NavbarProps) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => setIsSidebarOpen((prev) => !prev)}
+            onClick={handleMenuToggle}
             className="text-white hover:bg-police-700"
           >
             <Menu className="h-6 w-6" />

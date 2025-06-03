@@ -51,17 +51,24 @@ const navItems: NavItem[] = [
     title: "File Complaint",
     href: "/complaint/new",
     icon: ClipboardCheck,
-    roles: ["civilian"],
+    roles: ["civilian"], // Only civilians can file complaints
   },
 ];
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const { user, userRole } = useAuth();
 
+  console.log('Sidebar render - isOpen:', isOpen, 'userRole:', userRole); // Debug log
+
   // Filter items based on user role
   const filteredNavItems = navItems.filter(
     (item) => !item.roles || (userRole && item.roles.includes(userRole))
   );
+
+  const handleLinkClick = () => {
+    console.log('Sidebar link clicked, closing sidebar'); // Debug log
+    setIsOpen(false);
+  };
 
   return (
     <aside
@@ -75,12 +82,18 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              console.log('Close menu button clicked'); // Debug log
+              setIsOpen(false);
+            }}
             className="lg:hidden mb-4 w-full"
           >
             Close Menu
           </Button>
           <h2 className="text-xl font-bold text-police-800">Navigation</h2>
+          {userRole && (
+            <p className="text-sm text-gray-600 mt-1">Role: {userRole}</p>
+          )}
         </div>
 
         <ScrollArea className="flex-1">
@@ -91,7 +104,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                   <Link
                     to={item.href}
                     className="flex items-center px-4 py-3 text-gray-700 rounded-md hover:bg-police-50 hover:text-police-700 transition-colors"
-                    onClick={() => setIsOpen(false)}
+                    onClick={handleLinkClick}
                   >
                     <item.icon className="h-5 w-5 mr-3" />
                     <span>{item.title}</span>

@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   ChevronLeft, User, FileText, Send,
-  AlertCircle, Check 
+  AlertCircle, Check, ShieldAlert 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,9 +16,21 @@ import { getPoliceStations, submitComplaint } from "@/services/dataService";
 
 const ComplaintPage = () => {
   const { officerId = "new" } = useParams();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const navigate = useNavigate();
   const [complaintText, setComplaintText] = useState("");
+  
+  // Redirect police users - they shouldn't file complaints
+  useEffect(() => {
+    if (userRole === 'police') {
+      toast({
+        title: "Access Denied",
+        description: "Police officers cannot file complaints. Only civilians can file complaints against officers.",
+        variant: "destructive",
+      });
+      navigate("/");
+    }
+  }, [userRole, navigate]);
   
   const { data: stations } = useQuery({
     queryKey: ["policeStations"],
@@ -67,6 +79,21 @@ const ComplaintPage = () => {
       text: complaintText
     });
   };
+
+  // Don't render anything for police users (they'll be redirected)
+  if (userRole === 'police') {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <Alert className="max-w-md mx-auto">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            Police officers cannot file complaints. Redirecting...
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div>
