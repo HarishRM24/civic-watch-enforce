@@ -96,3 +96,24 @@ export const updateCivilian = async (id: string, updates: Partial<Civilian>): Pr
     return null;
   }
 };
+
+export const updateCivilianByUserId = async (userId: string, updates: Partial<Civilian>): Promise<Civilian | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('civilians')
+      .update(updates)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating civilian by user ID:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Service error updating civilian by user ID:', error);
+    return null;
+  }
+};

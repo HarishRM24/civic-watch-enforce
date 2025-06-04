@@ -1,346 +1,321 @@
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { 
-  User, Mail, Phone, Home, Briefcase, 
-  Save, Edit, Shield 
-} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { getCivilianByUserId, updateCivilianByUserId } from "@/services/civilianService";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/hooks/useAuth";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { User, Phone, MapPin, Briefcase, DollarSign, Edit, Save, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { getCivilianByUserId, updateCivilian } from "@/services/civilianService";
 
 const CivilianProfilePage = () => {
   const { user, userProfile } = useAuth();
+  const [civilianData, setCivilianData] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
-  
-  const { data: civilian, isLoading, refetch } = useQuery({
-    queryKey: ["civilian", user?.id],
-    queryFn: () => getCivilianByUserId(user!.id),
-    enabled: !!user?.id
-  });
-  
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
-    job: "",
-    salary: "",
+    name: "",
+    phone: "",
     address: "",
     city: "",
     state: "",
-    pincode: ""
+    pincode: "",
+    job: "",
+    salary: ""
   });
-  
-  // Initialize form data when civilian data is loaded
+
   useEffect(() => {
-    if (civilian) {
-      setFormData({
-        job: civilian.job || "",
-        salary: civilian.salary || "",
-        address: civilian.address || "",
-        city: civilian.city || "",
-        state: civilian.state || "",
-        pincode: civilian.pincode || ""
-      });
-    }
-  }, [civilian]);
-  
-  const updateMutation = useMutation({
-    mutationFn: (data: any) => updateCivilian(civilian!.id, data),
-    onSuccess: () => {
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
-      });
-      refetch();
-      setIsEditing(false);
-    },
-    onError: () => {
+    const fetchCivilianData = async () => {
+      if (user?.id) {
+        try {
+          const data = await getCivilianByUserId(user.id);
+          if (data) {
+            setCivilianData(data);
+            setFormData({
+              name: data.name || "",
+              phone: data.phone || "",
+              address: data.address || "",
+              city: data.city || "",
+              state: data.state || "",
+              pincode: data.pincode || "",
+              job: data.job || "",
+              salary: data.salary || ""
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching civilian data:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load profile data",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchCivilianData();
+  }, [user?.id]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsLoading(true);
+      const updatedData = await updateCivilianByUserId(user.id, formData);
+      
+      if (updatedData) {
+        setCivilianData(updatedData);
+        setIsEditing(false);
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
         description: "Failed to update profile",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-  });
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    updateMutation.mutate({
-      job: formData.job,
-      salary: formData.salary,
-      address: formData.address,
-      city: formData.city,
-      state: formData.state,
-      pincode: formData.pincode
-    });
+
+  const handleCancel = () => {
+    if (civilianData) {
+      setFormData({
+        name: civilianData.name || "",
+        phone: civilianData.phone || "",
+        address: civilianData.address || "",
+        city: civilianData.city || "",
+        state: civilianData.state || "",
+        pincode: civilianData.pincode || "",
+        job: civilianData.job || "",
+        salary: civilianData.salary || ""
+      });
+    }
+    setIsEditing(false);
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <div className="animate-spin h-8 w-8 border-4 border-police-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p>Loading profile...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-police-600"></div>
+        </div>
       </div>
     );
   }
 
-  // Use actual user data with fallbacks
-  const displayName = userProfile?.display_name || user?.user_metadata?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
-  const displayEmail = userProfile?.email || user?.email || '';
-  const phoneNumber = civilian?.phone || 'Not provided';
-  const address = civilian?.address || 'Not provided';
-  const city = civilian?.city || '';
-  const state = civilian?.state || '';
-  const pincode = civilian?.pincode || '';
-
   return (
-    <div>
-      <div className="page-header">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold text-white">My Profile</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)} className="bg-police-600 hover:bg-police-700">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Profile
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+              <Button onClick={handleCancel} variant="outline">
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
-      
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="md:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="w-24 h-24 rounded-full bg-police-100 flex items-center justify-center mx-auto mb-4">
-                  <User className="h-12 w-12 text-police-600" />
-                </div>
-                <CardTitle>{displayName}</CardTitle>
-                <CardDescription>
-                  {civilian?.is_criminal ? (
-                    <span className="text-red-500 flex items-center justify-center mt-2">
-                      <Shield className="h-4 w-4 mr-1" />
-                      Criminal Record
-                    </span>
-                  ) : (
-                    <span className="text-green-600 flex items-center justify-center mt-2">
-                      <Shield className="h-4 w-4 mr-1" />
-                      Clean Record
-                    </span>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p>{displayEmail}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Phone</p>
-                      <p>{phoneNumber}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <Home className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Address</p>
-                      <p>
-                        {address}
-                        {city && <><br />{city}</>}
-                        {state && <>, {state}</>}
-                        {pincode && <> - {pincode}</>}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {civilian?.job && (
-                    <div className="flex items-center">
-                      <Briefcase className="h-5 w-5 text-gray-400 mr-3" />
-                      <div>
-                        <p className="text-sm text-gray-500">Occupation</p>
-                        <p>{civilian.job}</p>
-                        {civilian.salary && (
-                          <p className="text-sm text-gray-500">
-                            Annual Salary: ₹{parseInt(civilian.salary).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={() => setIsEditing(!isEditing)} 
-                  variant="outline" 
-                  className="w-full"
-                >
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Overview */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profile Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <div className="w-24 h-24 bg-police-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="h-12 w-12 text-police-600" />
+              </div>
+              <h3 className="text-xl font-semibold">{formData.name || "User"}</h3>
+              <p className="text-gray-600">{userProfile?.email || user?.email}</p>
+              <Badge className="mt-2 bg-blue-100 text-blue-800">Civilian</Badge>
+              {civilianData?.is_criminal && (
+                <Badge className="mt-1 bg-red-100 text-red-800">Criminal Record</Badge>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Personal Information */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>
+                {isEditing ? "Edit your personal details" : "View your personal details"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Full Name</Label>
                   {isEditing ? (
-                    <>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Cancel Editing
-                    </>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      placeholder="Enter your full name"
+                    />
                   ) : (
-                    <>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Profile
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-          
-          <div className="md:col-span-2">
-            <Tabs defaultValue="profile">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="profile">Profile Details</TabsTrigger>
-                <TabsTrigger value="complaints">My Complaints</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="profile" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>
-                      Update your personal details
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isEditing ? (
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="job">Occupation</Label>
-                            <Input
-                              id="job"
-                              name="job"
-                              value={formData.job}
-                              onChange={handleInputChange}
-                              placeholder="e.g. Software Engineer"
-                            />
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="salary">Annual Salary</Label>
-                            <Input
-                              id="salary"
-                              name="salary"
-                              value={formData.salary}
-                              onChange={handleInputChange}
-                              placeholder="e.g. 1200000"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label>Address</Label>
-                          
-                          <div className="space-y-4">
-                            <Input
-                              name="address"
-                              value={formData.address}
-                              onChange={handleInputChange}
-                              placeholder="Street Address"
-                            />
-                            
-                            <div className="grid gap-4 md:grid-cols-3">
-                              <Input
-                                name="city"
-                                value={formData.city}
-                                onChange={handleInputChange}
-                                placeholder="City"
-                              />
-                              
-                              <Input
-                                name="state"
-                                value={formData.state}
-                                onChange={handleInputChange}
-                                placeholder="State"
-                              />
-                              
-                              <Input
-                                name="pincode"
-                                value={formData.pincode}
-                                onChange={handleInputChange}
-                                placeholder="PIN Code"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Button 
-                          type="submit" 
-                          className="bg-police-600 hover:bg-police-700"
-                          disabled={updateMutation.isPending}
-                        >
-                          {updateMutation.isPending ? (
-                            <span className="flex items-center">
-                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Saving...
-                            </span>
-                          ) : (
-                            <span className="flex items-center">
-                              <Save className="h-4 w-4 mr-2" />
-                              Save Changes
-                            </span>
-                          )}
-                        </Button>
-                      </form>
-                    ) : (
-                      <div className="space-y-4">
-                        <p className="text-gray-500 italic">
-                          Click "Edit Profile" to update your information.
-                        </p>
-                        
-                        <div className="border-t pt-4">
-                          <h3 className="font-medium mb-2">Important Notes</h3>
-                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                            <li>Keeping your address updated helps police respond efficiently to emergencies.</li>
-                            <li>Your information is protected and only accessible to authorized personnel.</li>
-                            <li>Report any suspicious activities at your nearest police station.</li>
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="complaints" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Complaints Filed</CardTitle>
-                    <CardDescription>
-                      Track the status of complaints you have filed
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">You haven't filed any complaints yet.</p>
-                      <Button className="mt-4" variant="outline">
-                        File a New Complaint
-                      </Button>
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <User className="h-4 w-4 text-gray-500" />
+                      <span>{formData.name || "Not provided"}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  {isEditing ? (
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      placeholder="Enter your phone number"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span>{formData.phone || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="address">Address</Label>
+                  {isEditing ? (
+                    <Textarea
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange("address", e.target.value)}
+                      placeholder="Enter your address"
+                      rows={2}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span>{formData.address || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  {isEditing ? (
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange("city", e.target.value)}
+                      placeholder="Enter your city"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span>{formData.city || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  {isEditing ? (
+                    <Input
+                      id="state"
+                      value={formData.state}
+                      onChange={(e) => handleInputChange("state", e.target.value)}
+                      placeholder="Enter your state"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span>{formData.state || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="pincode">PIN Code</Label>
+                  {isEditing ? (
+                    <Input
+                      id="pincode"
+                      value={formData.pincode}
+                      onChange={(e) => handleInputChange("pincode", e.target.value)}
+                      placeholder="Enter your PIN code"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span>{formData.pincode || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="job">Occupation</Label>
+                  {isEditing ? (
+                    <Input
+                      id="job"
+                      value={formData.job}
+                      onChange={(e) => handleInputChange("job", e.target.value)}
+                      placeholder="Enter your occupation"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <Briefcase className="h-4 w-4 text-gray-500" />
+                      <span>{formData.job || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="salary">Salary</Label>
+                  {isEditing ? (
+                    <Input
+                      id="salary"
+                      value={formData.salary}
+                      onChange={(e) => handleInputChange("salary", e.target.value)}
+                      placeholder="Enter your salary"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <DollarSign className="h-4 w-4 text-gray-500" />
+                      <span>{formData.salary || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
