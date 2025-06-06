@@ -137,6 +137,13 @@ const HomePage = () => {
           <p className="text-police-600">Data Management</p>
         </div>
       </div>
+
+      {/* Copyright Section */}
+      <div className="mt-12 text-center py-6 border-t border-gray-200">
+        <p className="text-gray-600">
+          © 2024 E-governance Jth component. All rights reserved.
+        </p>
+      </div>
     </div>
   );
 };
