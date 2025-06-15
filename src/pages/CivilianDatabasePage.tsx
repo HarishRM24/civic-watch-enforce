@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getCivilians } from "@/services/dataService";
+import { getCivilians } from "@/services/civilianService";
 
 const CivilianDatabasePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,16 +25,16 @@ const CivilianDatabasePage = () => {
     const query = searchQuery.toLowerCase();
     
     // Filter by criminal status if needed
-    if (showCriminals && !civilian.isCriminal) {
+    if (showCriminals && !civilian.is_criminal) {
       return false;
     }
     
     // Filter by search query
     return (
       civilian.name.toLowerCase().includes(query) ||
-      civilian.email.toLowerCase().includes(query) ||
-      civilian.address.city.toLowerCase().includes(query) ||
-      civilian.address.state.toLowerCase().includes(query) ||
+      (civilian.phone && civilian.phone.toLowerCase().includes(query)) ||
+      (civilian.city && civilian.city.toLowerCase().includes(query)) ||
+      (civilian.state && civilian.state.toLowerCase().includes(query)) ||
       (civilian.job && civilian.job.toLowerCase().includes(query))
     );
   });
@@ -70,7 +70,7 @@ const CivilianDatabasePage = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Search by name, email, location..."
+                  placeholder="Search by name, phone, location, job..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -110,7 +110,7 @@ const CivilianDatabasePage = () => {
                   <div>
                     <p className="text-sm text-gray-500">Clear Status</p>
                     <p className="text-xl font-semibold">
-                      {civilians?.filter(c => !c.isCriminal).length || 0}
+                      {civilians?.filter(c => !c.is_criminal).length || 0}
                     </p>
                   </div>
                 </div>
@@ -120,7 +120,7 @@ const CivilianDatabasePage = () => {
                   <div>
                     <p className="text-sm text-gray-500">Criminal Records</p>
                     <p className="text-xl font-semibold">
-                      {civilians?.filter(c => c.isCriminal).length || 0}
+                      {civilians?.filter(c => c.is_criminal).length || 0}
                     </p>
                   </div>
                 </div>
@@ -166,14 +166,18 @@ const CivilianDatabasePage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <div>{civilian.email}</div>
-                            <div className="text-gray-500">{civilian.phoneNumber}</div>
+                            <div>{civilian.phone || "N/A"}</div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <div>{civilian.address.city}</div>
-                            <div className="text-gray-500">{civilian.address.state}</div>
+                            <div>{civilian.address || "N/A"}</div>
+                            <div className="text-gray-500">
+                              {civilian.city && civilian.state ? `${civilian.city}, ${civilian.state}` : civilian.city || civilian.state || "N/A"}
+                            </div>
+                            {civilian.pincode && (
+                              <div className="text-gray-500">{civilian.pincode}</div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -185,7 +189,7 @@ const CivilianDatabasePage = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {civilian.isCriminal ? (
+                          {civilian.is_criminal ? (
                             <Badge variant="destructive" className="flex items-center w-fit">
                               <AlertTriangle className="h-3 w-3 mr-1" />
                               Criminal
